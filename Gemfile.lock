@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/cpitman/omniauth-openshift
-  revision: 3e9cc91b323aa2dd07c3ebf973149f145b2d8c59
+  revision: 76cc5296fd2dcc1667cad8813631d28a433ca566
   specs:
     omniauth-openshift (1.0.0)
       omniauth-oauth2 (~> 1.4)
