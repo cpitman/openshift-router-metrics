@@ -1,9 +1,4 @@
-GIT
-  remote: https://github.com/cpitman/omniauth-openshift
-  revision: 6b0a8f7f9aee106a071ea414b47111b5cafbdc6e
-  specs:
-    omniauth-openshift (1.0.0)
-      omniauth-oauth2 (~> 1.4)
+
 
 GEM
   remote: https://rubygems.org/
