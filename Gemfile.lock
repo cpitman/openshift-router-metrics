@@ -1,10 +1,3 @@
-GIT
-  remote: https://github.com/cpitman/omniauth-openshift
-  revision: 76cc5296fd2dcc1667cad8813631d28a433ca566
-  specs:
-    omniauth-openshift (1.0.0)
-      omniauth-oauth2 (~> 1.4)
-
 GEM
   remote: https://rubygems.org/
   specs:
@@ -105,6 +98,8 @@ GEM
     omniauth-oauth2 (1.4.0)
       oauth2 (~> 1.0)
       omniauth (~> 1.2)
+    omniauth-openshift (1.0.0)
+      omniauth-oauth2 (~> 1.4)
     puma (3.6.2)
     rack (2.0.1)
     rack-test (0.6.3)
@@ -184,7 +179,7 @@ DEPENDENCIES
   jbuilder (~> 2.5)
   jquery-rails
   listen (~> 3.0.5)
-  omniauth-openshift!
+  omniauth-openshift
   puma (~> 3.0)
   rails (~> 5.0.1)
   sass-rails (~> 5.0)

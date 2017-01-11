@@ -1,5 +1,13 @@
 class SessionsController < ApplicationController
   def create
-    render text: request.env['omniauth.auth'].to_yaml
+    session[:username]    = request.env['omniauth.auth']['info']['nickname']
+    session[:uid]         = request.env['omniauth.auth']['uid']
+    session[:credentials] = request.env['omniauth.auth']['credentials']
+    redirect_to '/'
+  end
+
+  def destroy
+    reset_session
+    redirect_to '/'
   end
 end

@@ -1,3 +1,84 @@
-<h1>Stats#index</h1>
-<p>Find me in app/views/stats/index.html.erb</p>
-<p>Testing Again!</p>
+<h1>Route Metrics</h1>
+
+<table border=0 style="float:right"><tr>
+<td align="center" nowrap>
+<table class="lgd"><tr>
+<td class="active4">&nbsp;</td><td class="noborder">active UP </td><td class="backup4">&nbsp;</td><td class="noborder">backup UP </td></tr><tr>
+<td class="active3"></td><td class="noborder">active UP, going down </td><td class="backup3"></td><td class="noborder">backup UP, going down </td></tr><tr>
+<td class="active2"></td><td class="noborder">active DOWN, going up </td><td class="backup2"></td><td class="noborder">backup DOWN, going up </td></tr><tr>
+<td class="active0"></td><td class="noborder">active or backup DOWN &nbsp;</td><td class="active9"></td><td class="noborder">not checked </td></tr><tr>
+<td class="maintain"></td><td class="noborder" colspan="3">active or backup DOWN for maintenance (MAINT) &nbsp;</td></tr><tr>
+<td class="active8"></td><td class="noborder" colspan="3">active or backup SOFT STOPPED for maintenance &nbsp;</td></tr></table>
+Note: "NOLB"/"DRAIN" = UP with load-balancing disabled.</td>
+</tr></table>
+
+<% @route_stats.each do |route, rows| 
+     route_anchor = route[:project] + '/' + route[:route]
+%>
+<table class="tbl" width="100%">
+<tr class="titre"><th class="pxname" width="10%"><a name="<%= route_anchor %>"></a><a class=px href="#<%= route_anchor %>"><%= route_anchor %></a></th><th class="empty" width="90%"></th></tr>
+</table>
+<table class="tbl" width="100%">
+<tr class="titre"><th rowspan=2 colspan=2></th><th colspan=3>Queue</th><th colspan=3>Session rate</th><th colspan=6>Sessions</th><th colspan=2>Bytes</th><th colspan=2>Denied</th><th colspan=3>Errors</th><th colspan=2>Warnings</th><th colspan=9>Server</th></tr>
+<tr class="titre"><th>Cur</th><th>Max</th><th>Limit</th><th>Cur</th><th>Max</th><th>Limit</th><th>Cur</th><th>Max</th><th>Limit</th><th>Total</th><th>LbTot</th><th>Last</th><th>In</th><th>Out</th><th>Req</th><th>Resp</th><th>Req</th><th>Conn</th><th>Resp</th><th>Retr</th><th>Redis</th><th>Status</th><th>LastChk</th><th>Wght</th><th>Act</th><th>Bck</th><th>Chk</th><th>Dwn</th><th>Dwntme</th><th>Thrtle</th>
+</tr>
+
+<% rows.each do |row| 
+     row_anchor = route_anchor + '/' + row['router'] + '/' + row['svname']
+%>
+<tr class="<%= get_row_style row %>">
+  <td><%= row['router'] %></td>
+  <td class=ac><a name="<%= row_anchor %>"></a><a class=lfsb href="#<%= row_anchor %>"><%= row['svname'] %></a></td>
+  <td><%= row['qcur'] %></td>
+  <td><%= row['qmax'] %></td>
+  <td><%= row['qlimit'] %></td>
+  <td><%= row['rate'] %></td>
+  <td><%= row['rate_max'] %></td>
+  <td><%= row['rate_lim'] %></td>
+  <td><%= row['scur'] %></td>
+  <td><%= row['smax'] %></td>
+  <td><%= row['slim'] %></td>
+  <td><u><%= row['stot'] %><div class=tips>
+    <table class=det>
+      <tr><th>Cum. sessions:</th><td><%= row['stot'] %></td></tr>
+      <tr><th>Cum. HTTP requests:</th><td><%= row['req_tot'] %></td></tr>
+      <tr><th>- HTTP 1xx responses:</th><td><%= row['hrsp_1xx'] %></td></tr>
+      <tr><th>- HTTP 2xx responses:</th><td><%= row['hrsp_2xx'] %></td></tr>
+      <tr><th>- HTTP 3xx responses:</th><td><%= row['hrsp_3xx'] %></td></tr>
+      <tr><th>- HTTP 4xx responses:</th><td><%= row['hrsp_4xx'] %></td></tr>
+      <tr><th>- HTTP 5xx responses:</th><td><%= row['hrsp_5xx'] %></td></tr>
+      <tr><th>- other responses:</th><td><%= row['hrsp_other'] %></td></tr>
+      <tr><th colspan=3>Avg over last 1024 success. conn.</th></tr>
+      <tr><th>- Queue time:</th><td><%= row['qtime'] %></td><td>ms</td></tr>
+      <tr><th>- Connect time:</th><td><%= row['ctime'] %></td><td>ms</td></tr>
+      <tr><th>- Response time:</th><td><%= row['rtime'] %></td><td>ms</td></tr>
+      <tr><th>- Total time:</th><td><%= row['ttime'] %></td><td>ms</td></tr>
+    </table>
+  </div></u></td>
+  <td><%= row['lbtot'] %></td>
+  <td><% if row['lastsess'] == '-1' %>?<% else %><%= row['lastsess'] %>s<% end %></td>
+  <td><%= row['bin'] %></td>
+  <td><%= row['bout'] %><div class=tips>compression: in=0 out=0 bypassed=0 savings=0%</div></td>
+  <td><%= row['dreq'] %></td>
+  <td><%= row['dresp'] %></td>
+  <td><%= row['ereq'] %></td>
+  <td><%= row['econ'] %></td>
+  <td><u><%= row['eresp'] %><div class=tips>Connection resets during transfers: <%= row['cli_abrt'] %> client, <%= row['srv_abrt'] %> server</div></u></td>
+  <td><%= row['wretr'] %></td>
+  <td><%= row['wredis'] %></td>
+  <td class=ac><%= time_ago_in_words(row['lastchg'].to_i.seconds.ago) %> <%= row['status'] %></td>
+  <td class=ac><% if !row['check_status'].nil? %><%= row['check_status'] %> in <%= row['check_duration'] %>ms<% end %></td>
+  <td class=ac><%= row['weight'] %></td>
+  <td class=ac><%= row['act'] %></td>
+  <td class=ac><%= row['bck'] %> </td>
+  <td class=ac><%= row['chkfail'] %></td>
+  <td><%= row['chkdown'] %></td>
+  <td><%= row['downtime'] %>s</td>
+  <td><%= row['throttle'] %></td>
+</tr>
+
+<% end %>
+
+</table>
+<p>
+<% end %>

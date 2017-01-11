@@ -9,6 +9,12 @@
   </head>
 
   <body>
+    <div style="float:right" >
+      <%= form_tag("/logout", method:"post") do %>
+        Logged in as <%= session[:username] %> 
+        <%= submit_tag 'Logout' %>
+      <% end %>
+    </div>
     <%= yield %>
   </body>
 </html>
