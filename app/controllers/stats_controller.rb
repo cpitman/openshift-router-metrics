@@ -1,4 +1,5 @@
 require 'csv'
+require 'faraday'
 
 class StatsController < ApplicationController
   before_action :require_login
@@ -8,8 +9,12 @@ class StatsController < ApplicationController
     projects = response['items'].collect { |item| item['metadata']['name'] }
 
     @routes = projects.collect_concat { |project|
-      response = JSON.parse access_token.get("/oapi/v1/namespaces/#{project}/routes").body
-      response['items'].collect { |item| {route: item['metadata']['name'], project: item['metadata']['namespace'] } }
+      begin
+        response = JSON.parse access_token.get("/oapi/v1/namespaces/#{project}/routes").body
+        response['items'].collect { |item| {route: item['metadata']['name'], project: item['metadata']['namespace'] } }
+      rescue Faraday::ClientError
+        []
+      end
     }.to_set
 
     response = JSON.parse service_account.get('/api/v1/namespaces/default/pods', {labelSelector: 'router=router'}).body
@@ -24,13 +29,17 @@ class StatsController < ApplicationController
     }
 
     router_stats = nil
-    routers.each { |router| 
-      item = get_router_stats(router[:ip], router[:port], router[:username], router[:password])
-      item['router'] = router[:name]
-      if router_stats.nil?
-        router_stats = item.by_col_or_row
-      else
-        item.each { |row| router_stats.push row }
+    routers.each { |router|
+      begin 
+        item = get_router_stats(router[:ip], router[:port], router[:username], router[:password])
+        item['router'] = router[:name]
+        if router_stats.nil?
+          router_stats = item.by_col_or_row
+        else
+          item.each { |row| router_stats.push row }
+        end
+      rescue Faraday::ClientError
+
       end
     }
 
