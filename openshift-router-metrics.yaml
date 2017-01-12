@@ -1,0 +1,183 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: openshift-router-metrics
+  annotations:
+    openshift.io/display-name: OpenShift Router Metrics
+    description: Provides SSO multi-tenant access to router metrics for a user's routes, allowing them to see traffic levels and diagnose errors.
+    tags: instant-app
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: ${APP_NAME}
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: ${APP_NAME}
+    strategy:
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          app: ${APP_NAME}
+          deploymentconfig: ${APP_NAME}
+      spec:
+        containers:
+        - env:
+          - name: SECRET_KEY_BASE
+            value: ${SECRET_KEY_BASE}
+          - name: OAUTHCLIENT_NAME
+            value: ${APP_NAME}
+          - name: OAUTHCLIENT_SECRET
+            value: ${OAUTHCLIENT_SECRET}
+          - name: PUBLIC_URL
+            value: https://${PUBLIC_HOSTNAME}
+          - name: VERIFY_MASTER_TLS
+            value: ${VERIFY_MASTER_TLS}
+          - name: RAILS_SERVE_STATIC_FILES
+            value: "true"
+          - name: PUBLIC_MASTER_URL
+            value: ${PUBLIC_MASTER_URL}
+          imagePullPolicy: Always
+          name: ${APP_NAME}
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        securityContext: {}
+        serviceAccount: ${APP_NAME}
+        serviceAccountName: ${APP_NAME}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${APP_NAME}
+        from:
+          kind: ImageStreamTag
+          name: ${APP_NAME}:latest
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ${APP_NAME}
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${APP_NAME}:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      git:
+        ref: master
+        uri: ${GIT_REPO_URI}
+      type: Git
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: ruby:2.3
+          namespace: openshift
+      type: Source
+    triggers:
+    - imageChange: {}
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ${APP_NAME}
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      deploymentconfig: ${APP_NAME}
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Route
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: ${APP_NAME}
+    name: ${APP_NAME}
+  spec:
+    host: ${PUBLIC_HOSTNAME}
+    port:
+      targetPort: 8080-tcp
+    to:
+      kind: Service
+      name: ${APP_NAME}
+      weight: 100
+    tls:
+      termination: edge
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ${APP_NAME}
+  spec:
+    tags:
+    - name: latest
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: ${APP_NAME}
+parameters:
+- name: APP_NAME
+  displayName: Application Name
+  description: Name used for identifying all assets, must be unique for multiple deployments.
+  value: openshift-router-metrics
+  required: true
+- name: PUBLIC_HOSTNAME
+  displayName: Public Hostname
+  description: Hostname that this application will listen on for traffic (ie router-metrics.paas.example.com).
+  required: true
+- name: OAUTHCLIENT_SECRET
+  displayName: OAuthClient Secret
+  description: A secret used by the app to authenticate with the master API when peforming an SSO login.
+  generate: expression
+  from: "[a-zA-Z0-9]{40}"
+- name: PUBLIC_MASTER_URL
+  displayName: Public Master URL
+  description: The externally accessable url for the OpenShift Master (ie https://paas.example.com:8443).
+  required: true
+- name: VERIFY_MASTER_TLS
+  displayName: Verify Master TLS Certificate
+  description: If "true", this app will require the master to present a trusted certificate for all interactions.
+  value: "true"
+  required: true
+- name: GIT_REPO_URI
+  displayName: Source Code Git Repo URI
+  description: The location of the source code of openshift-router-metrics. Only needs to be changed if the source code is forked.
+  value: https://github.com/cpitman/openshift-router-metrics.git
+  required: true
+message: |
+  There are two manual steps needed after running this template:
+  1. The app requires its service account to be given view permissions on the default project. To do this, run `oc adm policy add-role-to-user view system:serviceaccount:PROJECTNAME:${APP_NAME} -n default` from the command line, where "PROJECTNAME" is the name of project containing this app.
+  2. The app requires an OAuthClient to perform SSO login flows. Copy the following json to a file (eq oauthclient.json) and then run `oc create -f oauthclient.json`:
+  
+  {"apiVersion": "v1", "kind": "OAuthClient", "metadata": { "name": "${APP_NAME}" }, "redirectURIs": [ "https://${PUBLIC_HOSTNAME}/auth/openshift/callback" ], "secret": "${OAUTHCLIENT_SECRET}" }

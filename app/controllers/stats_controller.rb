@@ -8,6 +8,8 @@ class StatsController < ApplicationController
     response = JSON.parse access_token.get('/oapi/v1/projects').body
     projects = response['items'].collect { |item| item['metadata']['name'] }
 
+    logger.debug "Projects for #{current_user[:username]}: #{projects}"
+
     @routes = projects.collect_concat { |project|
       begin
         response = JSON.parse access_token.get("/oapi/v1/namespaces/#{project}/routes").body
@@ -16,6 +18,8 @@ class StatsController < ApplicationController
         []
       end
     }.to_set
+
+    logger.debug "Routes for #{current_user[:username]}: #{@routes.to_a}"
 
     response = JSON.parse service_account.get('/api/v1/namespaces/default/pods', {labelSelector: 'router=router'}).body
     routers = response['items'].collect { |item| 
@@ -43,6 +47,7 @@ class StatsController < ApplicationController
       end
     }
 
+    logger.debug "Routes from routers: #{router_stats.to_csv}"
     router_stats.delete_if { |route| !@routes.include?({route: route['route'], project: route['project']} ) }
 
 
@@ -57,7 +62,7 @@ class StatsController < ApplicationController
     router_conn = Faraday.new("http://#{ip}:#{port}/") 
     router_conn.basic_auth username, password
 
-    be_regex = /^[^_]*_[^_]*_([^_]*)_([^_]*)$/
+    be_regex = /^be_.*_([^_]*)_([^_]*)$/
 
     response = CSV.parse router_conn.get('/;csv').body, headers: true
     response.delete_if { |row| be_regex.match(row['# pxname']).nil? }
