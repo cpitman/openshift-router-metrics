@@ -7,6 +7,7 @@ Rails.application.config.middleware.use OmniAuth::Builder do
     client_id: ENV['OAUTHCLIENT_NAME'] || 'openshift-router-metrics',
     client_secret: ENV['OAUTHCLIENT_SECRET'],
     client_options: {
+      site: ENV['PUBLIC_MASTER_URL'],
       redirect_uri: URI.join((ENV['PUBLIC_URL'] || 'http://example.com'), '/auth/openshift/callback').to_s,
       ssl: {verify: (ENV['VERIFY_MASTER_TLS'] || 'true') == 'true'},
     }
