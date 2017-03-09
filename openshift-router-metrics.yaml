@@ -178,6 +178,6 @@ parameters:
 message: |
   There are two manual steps needed after running this template:
   1. The app requires its service account to be given view permissions on the default project. To do this, run `oc adm policy add-role-to-user view system:serviceaccount:PROJECTNAME:${APP_NAME} -n default` from the command line, where "PROJECTNAME" is the name of project containing this app.
-  2. The app requires an OAuthClient to perform SSO login flows. Copy the following json to a file (eq oauthclient.json) and then run `oc create -f oauthclient.json`:
+  2. The app requires an OAuthClient to perform SSO login flows. To create the client, run the following as an admin:
   
-  {"apiVersion": "v1", "kind": "OAuthClient", "metadata": { "name": "${APP_NAME}" }, "redirectURIs": [ "https://${PUBLIC_HOSTNAME}/auth/openshift/callback" ], "secret": "${OAUTHCLIENT_SECRET}" }
+  echo '{"apiVersion": "v1", "kind": "OAuthClient", "metadata": { "name": "${APP_NAME}" }, "redirectURIs": [ "https://${PUBLIC_HOSTNAME}/auth/openshift/callback" ], "secret": "${OAUTHCLIENT_SECRET}" }' | oc create -f -
