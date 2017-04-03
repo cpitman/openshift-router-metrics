@@ -28,6 +28,13 @@ end of the url.
 
 ## Deployment
 
+Prerequisites:
+
+1. This application communicates with HAProxy to get statistics, which requires 
+   port 1936/TCP to be open on all infrastructure nodes. This is good practice
+   anyways, since this is the port that should be used for health checking the
+   routers.
+
 Most of the installation is automated via a OpenShift Template. Download the
 template
 [openshift-router-metrics.yaml](https://raw.githubusercontent.com/cpitman/openshift-router-metrics/master/openshift-router-metrics.yaml],
