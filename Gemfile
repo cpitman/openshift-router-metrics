@@ -51,8 +51,4 @@ end
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 
 gem 'omniauth-openshift'
-#Update to Faraday 0.11.0
-gem 'mini_portile2', '>= 2.1.0'
-gem 'nokogiri', '>= 1.7.1'
-gem 'faraday', '>= 0.11'
 gem 'httpclient'
