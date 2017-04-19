@@ -22,19 +22,19 @@ class StatsController < ApplicationController
     logger.debug "Routes for #{current_user[:username]}: #{@routes.to_a}"
 
     response = JSON.parse service_account.get('/api/v1/namespaces/default/pods', {labelSelector: 'router=router'}).body
-    routers = response['items'].collect { |item| 
+    routers = response['items'].collect { |item|
       {
-        ip: item['status']['podIP'], 
-        name: item['metadata']['name'], 
-        password: item['spec']['containers'][0]['env'].find { |entry| entry['name'] == 'STATS_PASSWORD' }['value'], 
-        username: item['spec']['containers'][0]['env'].find { |entry| entry['name'] == 'STATS_USERNAME' }['value'], 
-        port: item['spec']['containers'][0]['env'].find { |entry| entry['name'] == 'STATS_PORT' }['value'] 
+        ip: item['status']['podIP'],
+        name: item['metadata']['name'],
+        password: item['spec']['containers'][0]['env'].find { |entry| entry['name'] == 'STATS_PASSWORD' }['value'],
+        username: item['spec']['containers'][0]['env'].find { |entry| entry['name'] == 'STATS_USERNAME' }['value'],
+        port: item['spec']['containers'][0]['env'].find { |entry| entry['name'] == 'STATS_PORT' }['value']
       }
     }
 
     router_stats = nil
     routers.each { |router|
-      begin 
+      begin
         item = get_router_stats(router[:ip], router[:port], router[:username], router[:password])
         item['router'] = router[:name]
         if router_stats.nil?
@@ -59,17 +59,21 @@ class StatsController < ApplicationController
   end
 
   def get_router_stats(ip, port, username, password)
-    router_conn = Faraday.new("http://#{ip}:#{port}/") 
+    ha_proxy_url="http://#{ip}:#{port}/"
+    logger.debug "Connecting to url: " + ha_proxy_url
+    router_conn = Faraday.new(:url => ha_proxy_url)  do |faraday|
+      faraday.adapter :httpclient
+    end
     router_conn.basic_auth username, password
 
     be_regex = /^be_.*_([^_]*)_([^_]*)$/
 
     response = CSV.parse router_conn.get('/;csv').body, headers: true
     response.delete_if { |row| be_regex.match(row['# pxname']).nil? }
-    response['project'] = response['# pxname'].collect{ |pxname| be_regex.match(pxname).captures[0] }	
+    response['project'] = response['# pxname'].collect{ |pxname| be_regex.match(pxname).captures[0] }
     response['route'] = response['# pxname'].collect{ |pxname| be_regex.match(pxname).captures[1] }
 #    response.delete('# pxname')
-    response	
+    response
   end
 
   def get_row_style(row)

@@ -1,7 +1,7 @@
 # OpenShift Router Metrics
 
-OpenShift by default uses HAProxy to reverse proxy and load balance 
-traffic coming from outside of OpenShift going to one or more pods 
+OpenShift by default uses HAProxy to reverse proxy and load balance
+traffic coming from outside of OpenShift going to one or more pods
 deployed in OpenShift. HAproxy exposes a statistics web page on port 1936, which
 a user can login to if they know the HAProxy admin password. Once logged in, a
 user can see data for all routes exposed by OpenShift.
@@ -30,7 +30,7 @@ end of the url.
 
 Prerequisites:
 
-1. This application communicates with HAProxy to get statistics, which requires 
+1. This application communicates with HAProxy to get statistics, which requires
    port 1936/TCP to be open on all infrastructure nodes. This is good practice
    anyways, since this is the port that should be used for health checking the
    routers.
@@ -39,7 +39,7 @@ Most of the installation is automated via a OpenShift Template. Download the
 template
 [openshift-router-metrics.yaml](https://raw.githubusercontent.com/cpitman/openshift-router-metrics/master/openshift-router-metrics.yaml],
 and then create the template by running `oc create -n openshift -f
-openshift-router-metrics.yml`. Then, using the web ui, choose a project and then
+openshift-router-metrics.yaml`. Then, using the web ui, choose a project and then
 click "Add to Project". Select the "openshift-router-metrics" template. The most
 important parameters that you need to provide are:
 
