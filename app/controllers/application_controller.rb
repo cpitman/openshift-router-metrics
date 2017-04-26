@@ -8,6 +8,7 @@ class ApplicationController < ActionController::Base
   end
 
   def require_login
+    reset_session if !session[:token_creation_time].nil? and session[:token_creation_time] < 24.hours.ago
     redirect_to '/auth/openshift' if current_user.nil?
   end
 
